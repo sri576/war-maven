@@ -1,0 +1,80 @@
+pipeline
+{
+    agent 'any'
+    
+    tools
+    {
+        maven 'M2_HOME'
+    }
+    
+    stages
+    {
+        
+        stage('checkOut')
+        {
+            steps
+            {
+                checkout scmGit(branches: [[name: '*/srikanth']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/sri576/war-maven.git']])
+            }
+        }
+        
+        stage('Build')
+        {
+            steps
+            {
+                sh 'mvn clean install package'
+            }
+        }
+        
+        stage('CodeQuality')
+        {
+            steps
+            {
+                sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=raja -Dsonar.host.url=http://13.233.245.217:9000 -Dsonar.login=sqp_5c63873e55d86a2aa89e659eda7b24ad1ab5cbfd'
+            }
+        }
+        
+        stage('Deploy')
+        {
+            steps
+            {
+                deploy adapters: [tomcat9(credentialsId: 'tomcat', path: '', url: 'http://13.201.186.190:8080/')], contextPath: null, war: '**/*.war'
+            }
+        }
+        
+        stage('Build Image')
+        {
+            steps
+            {
+                script
+                {
+                    sh 'docker build -t priya576/ecommers .'
+                }
+            }
+        }
+        
+        stage('Push Image in DockerHub')
+        {
+            steps
+            {
+                script
+                {
+                    withCredentials([string(credentialsId: 'dockerid', variable: 'srikanth')]) 
+                    {
+                        sh 'docker login -u priya576 -p ${srikanth}'
+                    }
+                    sh 'docker push priya576/ecommers'
+                }
+            }
+        }
+        
+        stage('Success ')
+        {
+            steps
+            {
+                echo 'suessfully install '
+            }
+        }
+        
+    }
+}
