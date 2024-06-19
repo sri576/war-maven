@@ -1,2 +1,4 @@
-FROM tomcat9
-RUN /target/*.war /usr/local/tomcat/webapps/wwp-1.0.0.war
+FROM openjdk:8
+EXPOSE 8080
+ADD **/*.war *.war
+ENTRYPOINT ["java", "-jre", "*.war"]
